@@ -20,22 +20,31 @@ void contact_callback(ConstContactsPtr& _msg)
 
   std::string collision1;
   std::string collision2;
+  ros::Time time;
   std_msgs::Time tmstp;
 
-  gazebo_msgs::ContactState contact_data;
+  gazebo_msgs::ContactsState contacts_data;
+  gazebo::msgs::Time when = _msg->time();
+  time.sec = when.sec();
+  time.nsec = when.nsec();
+  contacts_data.header.stamp = time;
+
+// TODO handle timing! get it from the contact state message...
 
   // Iterate over all the contacts in the message
   for (int i = 0; i < _msg->contact_size(); ++i)
   {
+    gazebo_msgs::ContactState single_collision_data;
+
     collision1 = _msg->contact(i).collision1();
     collision2 = _msg->contact(i).collision2();
 
-    contact_data.collision1_name = collision1;
-    contact_data.collision2_name = collision2;
-    contact_data.wrenches.clear();
-    contact_data.contact_positions.clear();
-    contact_data.contact_normals.clear();
-    contact_data.depths.clear();
+    single_collision_data.collision1_name = collision1;
+    single_collision_data.collision2_name = collision2;
+    single_collision_data.wrenches.clear();
+    single_collision_data.contact_positions.clear();
+    single_collision_data.contact_normals.clear();
+    single_collision_data.depths.clear();
 
     // sum up all wrenches for each DOF
     geometry_msgs::Wrench total_wrench;
@@ -72,7 +81,7 @@ void contact_callback(ConstContactsPtr& _msg)
       wrench.torque.x = torque.X();
       wrench.torque.y = torque.Y();
       wrench.torque.z = torque.Z();
-      contact_data.wrenches.push_back(wrench);
+      single_collision_data.wrenches.push_back(wrench);
 
       total_wrench.force.x += wrench.force.x;
       total_wrench.force.y += wrench.force.y;
@@ -92,7 +101,7 @@ void contact_callback(ConstContactsPtr& _msg)
       contact_position.x = position.X();
       contact_position.y = position.Y();
       contact_position.z = position.Z();
-      contact_data.contact_positions.push_back(contact_position);
+      single_collision_data.contact_positions.push_back(contact_position);
 
       // rotate normal into user specified frame.
       // frame_rot is identity if world is used.
@@ -105,26 +114,27 @@ void contact_callback(ConstContactsPtr& _msg)
       contact_normal.x = normal.X();
       contact_normal.y = normal.Y();
       contact_normal.z = normal.Z();
-      contact_data.contact_normals.push_back(contact_normal);
+      single_collision_data.contact_normals.push_back(contact_normal);
 
       // set contact depth, interpenetration
-      contact_data.depths.push_back(_msg->contact(i).depth(j));
+      single_collision_data.depths.push_back(_msg->contact(i).depth(j));
     }
+    contacts_data.states.push_back(single_collision_data);
 
-    collision_data_pub.publish(contact_data);
-
-    if (((collision1.find(robot_model_name) != std::string::npos) ||
-         (collision2.find(robot_model_name) != std::string::npos)) &&
-        ((collision1.find(actor_model_name) != std::string::npos) ||
-         (collision2.find(actor_model_name) != std::string::npos)))
-    {
-      gazebo::msgs::Time when = _msg->contact(i).time();
-      tmstp.data.sec = when.sec();
-      tmstp.data.nsec = when.nsec();
-      pub.publish(tmstp);
-      return;
-    }
+    // logic for filtering out contacts... 
+    // if (((collision1.find(robot_model_name) != std::string::npos) ||
+    //      (collision2.find(robot_model_name) != std::string::npos)) &&
+    //     ((collision1.find(actor_model_name) != std::string::npos) ||
+    //      (collision2.find(actor_model_name) != std::string::npos)))
+    // {
+    //   gazebo::msgs::Time when = _msg->contact(i).time();
+    //   tmstp.data.sec = when.sec();
+    //   tmstp.data.nsec = when.nsec();
+    //   pub.publish(tmstp);
+    //   return;
+    // }
   }
+  collision_data_pub.publish(contacts_data);
 }
 
 /////////////////////////////////////////////////
@@ -149,7 +159,7 @@ int main(int _argc, char** _argv)
 
   pub = nh.advertise<std_msgs::Time>(collisions_timestamp_topic_name, 5);
   collision_data_pub =
-      nh.advertise<gazebo_msgs::ContactState>(collision_names_topic_name, 5);
+      nh.advertise<gazebo_msgs::ContactsState>(collision_names_topic_name, 5);
 
 
   // Load gazebo

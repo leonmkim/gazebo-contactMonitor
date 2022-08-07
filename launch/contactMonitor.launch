@@ -5,11 +5,13 @@
   -->
 
 <launch>
-      <arg name="collisions_timestamp_topic_name" default="/isColliding"/>
-      <arg name="collision_names_topic_name" default="/collisionData"/>
-      <arg name="gazebo_physics_contact_topic_name" default="/gazebo/default/physics/contacts"/>
-      <arg name="robot_model_name" default="robot1"/>
-      <arg name="actor_model_name" default="actor1"/>
+    <arg name="collisions_timestamp_topic_name" default="/contact_time"/>
+    <arg name="collision_names_topic_name" default="/contact_data"/>
+    <arg name="gazebo_physics_contact_topic_name" default="/gazebo/default/physics/contacts"/>
+    <arg name="robot_model_name" default="panda"/>
+    <arg name="actor_model_name" default=""/>
+    <arg name="throttle_rate" default="100"/>
+
 
     <node pkg="contact_monitor" type="contactMonitor" name="contact" >
       <param name="collisions_timestamp_topic_name" value="$(arg collisions_timestamp_topic_name)"/>
@@ -18,5 +20,9 @@
       <param name="robot_model_name" value="$(arg robot_model_name)"/>
       <param name="actor_model_name" value="$(arg actor_model_name)"/>
     </node>
+
+    <node name="throttle_contact_data" pkg="topic_tools" type="throttle" args="messages /$(arg collision_names_topic_name) $(arg throttle_rate) /contact_data_throttled"/>
+    <node name="throttle_contact_time" pkg="topic_tools" type="throttle" args="messages /$(arg collisions_timestamp_topic_name) $(arg throttle_rate) /contact_time_throttled"/> 
+
 
 </launch>
