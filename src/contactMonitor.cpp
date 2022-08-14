@@ -12,6 +12,8 @@ std::string collisions_timestamp_topic_name;
 std::string collision_names_topic_name;
 std::string gazebo_physics_topic_name;
 
+int counter = 0; 
+
 /////////////////////////////////////////////////
 // Function is called everytime a message is received.
 void contact_callback(ConstContactsPtr& _msg)
@@ -29,13 +31,12 @@ void contact_callback(ConstContactsPtr& _msg)
   time.nsec = when.nsec();
   contacts_data.header.stamp = time;
 
-// TODO handle timing! get it from the contact state message...
-
   // Iterate over all the contacts in the message
   for (int i = 0; i < _msg->contact_size(); ++i)
   {
     gazebo_msgs::ContactState single_collision_data;
 
+    // TODO add some filtering here to skip contacts that arent happening to the robot!!!
     collision1 = _msg->contact(i).collision1();
     collision2 = _msg->contact(i).collision2();
 
@@ -134,7 +135,11 @@ void contact_callback(ConstContactsPtr& _msg)
     //   return;
     // }
   }
-  collision_data_pub.publish(contacts_data);
+  if (counter % 2 == 0)
+  {
+    collision_data_pub.publish(contacts_data);
+  }
+  counter++;
 }
 
 /////////////////////////////////////////////////
@@ -160,7 +165,6 @@ int main(int _argc, char** _argv)
   pub = nh.advertise<std_msgs::Time>(collisions_timestamp_topic_name, 5);
   collision_data_pub =
       nh.advertise<gazebo_msgs::ContactsState>(collision_names_topic_name, 5);
-
 
   // Load gazebo
   gazebo::client::setup(_argc, _argv);
