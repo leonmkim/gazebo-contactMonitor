@@ -40,6 +40,25 @@ void contact_callback(ConstContactsPtr& _msg)
     collision1 = _msg->contact(i).collision1();
     collision2 = _msg->contact(i).collision2();
 
+    // logic for filtering out contacts... 
+    if (!(((collision1.find(robot_model_name) != std::string::npos) ||
+         (collision2.find(robot_model_name) != std::string::npos))))
+    {
+      continue;
+    }
+
+    // if (((collision1.find(robot_model_name) != std::string::npos) ||
+    //      (collision2.find(robot_model_name) != std::string::npos)) &&
+    //     ((collision1.find(actor_model_name) != std::string::npos) ||
+    //      (collision2.find(actor_model_name) != std::string::npos)))
+    // {
+    //   gazebo::msgs::Time when = _msg->contact(i).time();
+    //   tmstp.data.sec = when.sec();
+    //   tmstp.data.nsec = when.nsec();
+    //   pub.publish(tmstp);
+    //   return;
+    // }
+
     single_collision_data.collision1_name = collision1;
     single_collision_data.collision2_name = collision2;
     single_collision_data.wrenches.clear();
@@ -158,9 +177,9 @@ int main(int _argc, char** _argv)
                                  gazebo_physics_topic_name, "/gazebo/default/physics/contacts");                                 
 
   ros::param::param<std::string>("~robot_model_name", robot_model_name,
-                                 "robot1");
+                                 "");
   ros::param::param<std::string>("~actor_model_name", actor_model_name,
-                                 "actor1");
+                                 "");
 
   pub = nh.advertise<std_msgs::Time>(collisions_timestamp_topic_name, 5);
   collision_data_pub =

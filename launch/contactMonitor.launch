@@ -8,7 +8,7 @@
     <arg name="collisions_timestamp_topic_name" default="/contact_time"/>
     <arg name="collision_names_topic_name" default="/contact_data"/>
     <arg name="gazebo_physics_contact_topic_name" default="/gazebo/default/physics/contacts"/>
-    <arg name="robot_model_name" default="panda"/>
+    <arg name="robot_model_name" default="EE_object"/>
     <arg name="actor_model_name" default=""/>
     <!-- <arg name="throttle_rate" default="200"/> -->
 
